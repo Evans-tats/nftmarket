@@ -89,7 +89,45 @@ contract MyNFT is ERC721URIStorage {
     function sellToken(uint256 _tokenId, uint256 price) public payable {
         require(idMarketItem[_tokenId].owner == msg.sender, "only owner of nft can call this function");
         require(msg.value == ListingPrice, "must be equal to listing price");
+        //reset the properties
+        idMarketItem[_tokenId].sold = false;
+        idMarketItem[_tokenId].price = price;
+        idMarketItem[_tokenId].seller = payable(msg.sender);
+        idMarketItem[_tokenId].owner = payable(address(this));
+
+        _tokensSold.decrement();
+        _transfer(msg.sender, address(this), _tokenId);
+
+    }
+
+    function CreateMarketSale(uint256 _tokenId) public payable {
+        uint256 price = idMarketItem[_tokenId].price;
+        require(msg.value == price, "not the asking price");
+
+        idMarketItem[_tokenId].owner = payable(msg.sender);
+        idMarketItem[_tokenId].sold = true;
+        idMarketItem[_tokenId].owner = payable(address(0));
+        
+        _transfer(address(this), msg.sender, _tokenId);
+
+        payable(owner).transfer(ListingPrice);
+        payable(idMarketItem[_tokenId].seller).transfer(msg.value);
+    }
+    function fetchMarketItem() public view returns (MarketItem[] memory) {
+        uint256 itemCount = _tokenIds.current();
+        uint256 unSoldItemsCount = itemCount - _tokensSold.current();
+        uint256 currentid = 0;
+
+        MarketItem[] memory items = new MarketItem[](unSoldItemsCount);
+        for (uint256 i = 0; i < itemCount; i++) {
+            if (idMarketItem[i +1].owner == address(this)) {
+                uint256 currentId = i +1;
+                MarketItem storage currentItem = idMarketItem[currentId];
+            }
+        }
 
 
     }
+
+
 }
